@@ -1,0 +1,20 @@
+# Dependencies & runtime
+node_modules/
+.pnp.*
+bun.lockb
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Generated Prisma client (rebuilt via prisma generate)
+examples/relaybox/src/generated/
+
+# Logs, artifacts & OS junk
+*.log
+npm-debug.log*
+relaybox-artifacts/
+dist/
+*.tsbuildinfo
+.DS_Store

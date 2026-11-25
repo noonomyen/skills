@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  member
+  admin
+}
+
+enum WorkspaceRole {
+  owner
+  member
+}
+
+model User {
+  id           String            @id
+  email        String            @unique
+  passwordHash String            @map("password_hash")
+  role         UserRole          @default(member)
+  disabled     Boolean           @default(false)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  sessions     Session[]
+  workspaces   Workspace[]
+  memberships  WorkspaceMember[]
+  artifacts    Artifact[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  userId    String   @map("user_id")
+  userAgent String   @map("user_agent")
+  ip        String
+  revoked   Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Workspace {
+  id            String            @id
+  name          String
+  webhookSecret String            @map("webhook_secret")
+  ownerId       String            @map("owner_id")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members       WorkspaceMember[]
+  webhooks      Webhook[]
+  artifacts     Artifact[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id
+  workspaceId String        @map("workspace_id")
+  userId      String        @map("user_id")
+  role        WorkspaceRole @default(member)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model Webhook {
+  id             String   @id
+  workspaceId    String   @map("workspace_id")
+  source         String
+  eventType      String   @map("event_type")
+  payloadJson    Json     @map("payload_json")
+  deliveryStatus String   @default("queued") @map("delivery_status")
+  createdAt      BigInt   @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)], map: "idx_webhooks_workspace_created")
+  @@index([workspaceId, createdAt(sort: Asc), id(sort: Asc)], map: "idx_webhooks_workspace_cursor")
+  @@map("webhooks")
+}
+
+model Artifact {
+  id          String @id
+  workspaceId String @map("workspace_id")
+  ownerId     String @map("owner_id")
+  filename    String
+  contentType String @map("content_type")
+  sizeBytes   Int    @map("size_bytes")
+  sha256      String
+  storagePath String @map("storage_path")
+  createdAt   BigInt @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("artifacts")
+}
+
+model AuditLog {
+  id         String  @id
+  actorId    String? @map("actor_id")
+  method     String
+  path       String
+  statusCode Int     @map("status_code")
+  durationMs Float   @map("duration_ms")
+  ip         String
+  createdAt  BigInt  @map("created_at")
+
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

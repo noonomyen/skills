@@ -1,0 +1,13 @@
+{
+  "name": "elysia-v1",
+  "version": "1.0.0",
+  "date": "25 Nov 2026",
+  "abstract": "Production-grade Elysia v1.4.x + Bun backend skill with Sucrose JIT optimization, Redis/Prisma patterns, security hardening, and verified reference codebase (RelayBox).",
+  "baseline": {
+    "elysia": "1.4.32",
+    "bun": ">=1.3.0",
+    "typebox": ">=0.34.0 <1",
+    "prisma": "7.10.1"
+  },
+  "references": ["https://elysiajs.com/llms.txt"]
+}
